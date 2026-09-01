@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function self(userId) { return signedIn() && request.auth.uid == userId; }
+    function role() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role; }
+    function staff() { return signedIn() && role() in ['faculty', 'moderator', 'admin']; }
+    function moderator() { return signedIn() && role() in ['moderator', 'admin']; }
+    function admin() { return signedIn() && role() == 'admin'; }
+
+    match /users/{userId} {
+      allow read: if self(userId) || moderator();
+      allow create: if self(userId) && request.resource.data.uid == request.auth.uid && request.resource.data.role == 'student';
+      allow update: if admin() || (self(userId) && request.resource.data.role == resource.data.role && request.resource.data.uid == resource.data.uid);
+      allow delete: if admin();
+
+      match /notifications/{notificationId} {
+        allow read, update, delete: if self(userId);
+        allow create: if self(userId) || moderator();
+      }
+    }
+
+    match /events/{eventId} {
+      allow read: if signedIn() && (resource.data.approval == 'approved' || staff());
+      allow create: if signedIn() && request.resource.data.organizerId == request.auth.uid && request.resource.data.approval == 'pending';
+      allow update, delete: if moderator();
+    }
+
+    match /eventRsvps/{rsvpId} {
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || staff());
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid && request.resource.data.status in ['rsvp', 'waitlist'];
+      allow update: if signedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.eventId == resource.data.eventId && request.resource.data.status in ['rsvp', 'waitlist'];
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || moderator());
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn() && (resource.data.moderationStatus == 'approved' || moderator());
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid && request.resource.data.moderationStatus == 'approved';
+      allow update, delete: if moderator() || (signedIn() && resource.data.authorId == request.auth.uid && request.resource.data.authorId == resource.data.authorId);
+    }
+
+    match /confessions/{confessionId} {
+      allow read: if signedIn() && (resource.data.moderationStatus == 'approved' || moderator());
+      allow create: if signedIn() && !('authorId' in request.resource.data) && !('authorName' in request.resource.data) && request.resource.data.moderationStatus == 'pending';
+      allow update, delete: if moderator();
+    }
+
+    match /lostItems/{itemId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && !('reporterId' in request.resource.data) && !('description' in request.resource.data);
+      allow update, delete: if moderator();
+
+      match /private/{privateId} {
+        allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+        allow read, update, delete: if moderator() || (signedIn() && resource.data.reporterId == request.auth.uid);
+      }
+    }
+
+    match /claims/{claimId} {
+      allow create: if signedIn() && request.resource.data.claimantId == request.auth.uid && request.resource.data.status == 'pending';
+      allow read: if moderator() || (signedIn() && resource.data.claimantId == request.auth.uid);
+      allow update, delete: if moderator();
+    }
+
+    match /moderation/{itemId} {
+      allow read, update, delete: if moderator();
+      allow create: if signedIn() && request.resource.data.submittedBy == request.auth.uid && request.resource.data.status == 'pending' && request.resource.data.kind in ['confession', 'post', 'event'];
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if moderator();
+      allow create: if moderator() && request.resource.data.actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}
