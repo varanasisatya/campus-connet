@@ -13,8 +13,8 @@ A cinematic, AI-assisted university operations experience with:
 ## Run locally
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:3000/dashboard`.
@@ -47,7 +47,7 @@ To grant a trusted staff account access, update its `users/{uid}.role` field in 
 ## Verification
 
 ```bash
-npm run build
+pnpm build
 ```
 
 The production build covers the dashboard, events, campus map, Lost & Found, feed, command center, authentication pages, and the server-side AI route.
