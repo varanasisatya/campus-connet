@@ -6,7 +6,7 @@
 
 From the first coffee to the last big idea, Campus Connect AI turns university events, wayfinding, lost property, student conversations, safety workflows, and AI guidance into one connected story.
 
-### [🌐 Explore the Live Campus](https://campus-connet-jairamvaranasi217465-3290s-projects.vercel.app)
+### [🌐 Explore the Live Campus](https://campus-connet.vercel.app)
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
